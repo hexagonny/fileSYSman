@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <cstdlib>
+#include <vector>
 
 #include <chrono>
 #include <thread>
@@ -25,6 +26,11 @@ using namespace std::filesystem;
     }
 #endif
 
+struct Config
+{
+    path sourceDirectory;
+    vector<path> initialPaths;
+};
 //  This function exists for better output handling.
 void sleep(int miliseconds){
     this_thread::sleep_for(chrono::milliseconds(miliseconds));
@@ -37,66 +43,100 @@ bool fileExists(const string &fileName)
 //  This function creates a new configuration file if the user does not have it.
 void createTextConfig(const string &fileName)
 {
-    path sourceDir;
-    do{
-        cout<<"Enter your documents path: ";
-        cin>>sourceDir;
+    vector<string> dirLabels = {"documents", "downloads", "desktop"};
+    vector<path> paths(3);
 
-        if(!exists(sourceDir) || !is_directory(sourceDir)){
-            cerr<<"Error: Path does not exist or is not a directory.\n";
-            sourceDir.clear();
-        }
-    }while(sourceDir.empty());
-    cout<<"Directory Accepted: "<<sourceDir<<'\n';
+    for(size_t i = 0; i < dirLabels.size(); ++i ){
+        do{
+            cout<<"Enter your "<<dirLabels[i]<<" path: ";
+            cin >> paths[i];
+
+            if(!exists(paths[i]) || !is_directory(paths[i])){
+                cerr<<"Error: Path does not exists or is noot a directory.\n";
+                paths[i].clear();
+            }
+        }while(paths[i].empty());
+    }
+
+    cout<<"Directory Accepted:\n";
+    for(const auto &path : paths){
+        cout<<'\t'<<path<<'\n';
+    }
     
     ofstream file(fileName);
 
     if(file.is_open()){
-        file<<"sourceDirectory="<<sourceDir<<'\n';
+        file<<"sourceDirectory="<<paths[0]<<'\n';
+        file<<"initialDirectories="<<paths[1]<<","<<paths[2];
         cout<<"File created: "<<fileName<<'\n';
     }
     else{
         cerr<<"Error: Failed to create file "<<fileName<<'\n';
     }
 }
+string trim(const string &str){
+    size_t first = str.find_first_not_of(" \t");
+    size_t last = str.find_last_not_of(" \t");
+
+    if(first == string::npos || last == string::npos){
+        return "";
+    }
+
+    return str.substr(first, (last - first + 1));
+}
 //  This function reads every single string and filters out the unnecessary characters.
-path readConfig(const string& fileName)
+Config readConfig(const string& fileName)
 {
     ifstream file(fileName);
+    Config config;
+    if(!file.is_open()){
+        cerr<<"Error: Failed to open config file: "<<fileName<<'\n';
+        return config;
+    }
+    cout<<"Successfuly opened: "<<fileName<<'\n';
+
     string line;
-    path sourceDir;
+    while(getline(file, line)){
+        if(line.find("sourceDirectory=") == 0){
+            string sourceDir = line.substr(string("sourceDirectory=").size());
 
-    if (file.is_open()){
-        cout<<"Successfuly opened: "<<fileName<<'\n';
+            sourceDir = trim(sourceDir);
 
-        while(getline(file, line)){
-            if(line.find("sourceDirectory=") == 0){
-                string pathValue = line.substr(16);
+            if(!sourceDir.empty() && sourceDir.front() == '"' && sourceDir.back() == '"'){
+                sourceDir = sourceDir.substr(1, sourceDir.size() - 2);
+            }
 
-                if(!pathValue.empty() && pathValue.front() == '"' && pathValue.back() == '"'){
-                    pathValue = pathValue.substr(1, pathValue.size() - 2);
+            config.sourceDirectory = sourceDir;
+        }
+        else if(line.find("initialDirectories=") == 0){
+            string directories = line.substr(string("initialDirectories=").size());
+            
+            directories = trim(directories);
+
+            stringstream ss(directories);
+            string path;
+            while(getline(ss, path, ',')){
+                path = trim(path);
+
+                if(!path.empty() && path.front() == '"' && path.back() == '"'){
+                    path = path.substr(1, path.size() - 2);
                 }
-                sourceDir = pathValue;
-                break;
+                config.initialPaths.push_back(path);
             }
         }
-        
-        file.close();
     }
-    else{
-        cerr<<"Error: Failed to open config file: "<<fileName<<'\n';
-    }
-
-    return sourceDir;
+    
+    file.close();
+    return config;
 }
 /*
   One of the key functions. It organizes cluttered documents into their respective folders.
   The algorithm is based on file extentions and their matching folder names.
 */
-void moveDocumentFiles(const path& sourceDir, const unordered_map<string, path>& destMap)
+void sortDocumentFiles(const path& sourceDir, const unordered_map<string, path>& destMap)
 {
     try{
-        for (const auto& entry : directory_iterator(sourceDir)){
+        for(const auto& entry : directory_iterator(sourceDir)){
             if(entry.is_regular_file()){
                 const auto& filePath = entry.path();
                 const auto& ext = filePath.extension().string();
@@ -116,21 +156,69 @@ void moveDocumentFiles(const path& sourceDir, const unordered_map<string, path>&
                     cout<<"Moved: "<<filePath.string()<<'\n'
                         <<"To: "<<destPath.string()<<'\n';
                 }
-
             }
         }
-    } catch (const filesystem_error& e){
+    }
+    catch(const filesystem_error& e){
         cerr<<"Error: "<<e.what()<<'\n';
     }
     cout<<'\n';
 }
-//  This function displays the current destinations for checking and debugging.
-void displayCurrentDir(const path& sourceDir, const unordered_map<string, path>& destMap)
+/*
+  One of the key functions. It moves common document files from different directories to the prefered documents folder.
+  The algorithm is based on file extentions and multiple directories(eg. downloads folder).
+*/
+void moveDocumentFiles(const vector<path>& initialPaths,
+                       const path& sourceDir,
+                       const unordered_map<string, path>& destMap)
 {
-    cout<<"Current source directory: "<<sourceDir.string()<<'\n';
-    cout<<"Current destination directories:\n";
+    for (const auto& initialDir : initialPaths){
+        if(!exists(initialDir) || !is_directory(initialDir)){
+            cerr<<"Warning: Initial directory does not exist or is not a directory: "<<initialDir.string()<<'\n';
+            continue;
+        }
+
+        for(const auto& entry : directory_iterator(initialDir)){
+            if(entry.is_regular_file()){
+                string ext = entry.path().extension().string();
+
+                if(destMap.find(ext) != destMap.end()){
+                    try{
+                        path destination = sourceDir / entry.path().filename();
+                        
+                        rename(entry.path(), destination);
+                        cout<<"Moved: "<<entry.path().string()<<'\n'
+                            <<"To: "<<destination.string()<<'\n';
+                    }
+                    catch(const filesystem_error &e){
+                        cerr<<"Error moving file: "<<entry.path().string()<<": "<<e.what()<<'\n';
+                    }
+                }
+            }
+        }
+    }
+    cout<<'\n';
+}
+//  This function displays the current destinations for checking and debugging.
+void displayCurrentDir(const vector<path>& initialPaths,
+                       const path& sourceDir,
+                       const unordered_map<string, path>& destMap)
+{
+    cout<<"Current Configuration:\n\n";
+    if(!initialPaths.empty()){
+        cout<<"Initial directories:\n";
+        for(const auto &initialDir : initialPaths){
+            cout<<'\t'<<initialDir.string()<<'\n';
+        }
+    }
+    else{
+        cout<<"Initial Directories: None specified.\n";
+    }
+    cout<<"Source directory: "<<sourceDir.string()<<'\n';
+    cout<<"Destination directories:\n";
     for(const auto& [extention, destDir] : destMap){
-        cout<<'\t'<<destDir.string()<<'\n';
+        cout<<'\t'<<destDir.string()<<" -> "
+            <<extention<<'\n';
     }
     cout<<'\n';
 }
@@ -156,24 +244,49 @@ int main()
         createTextConfig(fileName);
     }
 
-    path sourceDirectory = readConfig(fileName);
+    Config config = readConfig(fileName);
+
+    if (config.sourceDirectory.empty()){
+        cerr<<"Error: Source directory is missing in the config file.\n\n";
+        system("pause");
+        return 1;
+    }
+
     unordered_map<string, path> destinationMap = {
-        {".pdf",  sourceDirectory / "PDF"},
-        {".docx", sourceDirectory / "DOCX"},
-        {".doc",  sourceDirectory / "DOCX"},
-        {".pptx", sourceDirectory / "PPTX"},
-        {".xlsx", sourceDirectory / "XLSX"},
+        {".pdf",  config.sourceDirectory / "PDF"},
+        {".docx", config.sourceDirectory / "DOCX"},
+        {".doc",  config.sourceDirectory / "DOCX"},
+        {".pptx", config.sourceDirectory / "PPTX"},
+        {".xlsx", config.sourceDirectory / "XLSX"},
     };
 
     cout<<line; cout<<endl;
-    displayCurrentDir(sourceDirectory, destinationMap);
+    displayCurrentDir(config.initialPaths,
+                      config.sourceDirectory,
+                      destinationMap);
 
     system("pause");
-    cout<<line; cout<<endl;
-    
-    moveDocumentFiles(sourceDirectory, destinationMap);
+    cout<<line; cout<<endl; 
 
-    system("pause");
+    int choice;
+    do{
+        cout<<"1. Move files to your documents folder\n"
+            <<"2. Sort files in your documents folder\n"
+            <<"   Enter any key to exit.\n\n"
+            <<"Choose action: ";
+        cin>>choice;
+
+        switch(choice){
+            case 1: moveDocumentFiles(config.initialPaths,
+                                      config.sourceDirectory,
+                                      destinationMap);
+                    break;
+            case 2: sortDocumentFiles(config.sourceDirectory, destinationMap);
+                    break;
+        }
+        system("pause");
+        cout<<line; cout<<endl; 
+    }while(choice == 1 || choice == 2);
 
     return 0;
 }
