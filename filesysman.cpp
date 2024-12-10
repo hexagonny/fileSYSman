@@ -12,20 +12,6 @@
 using namespace std;
 using namespace std::filesystem;
 
-#ifdef _WIN32
-    // Windows-specific code
-    void setConsoleWindowSize(int width, int height) {
-        std::string command = "mode con: cols=" + std::to_string(width) + " lines=" + std::to_string(height);
-        system(command.c_str());
-    }
-#elif __unix__
-    // Linux/MacOS-specific code
-    void setConsoleWindowSize(int width, int height) {
-        std::string command = "resize -s " + std::to_string(height) + " " + std::to_string(width);
-        system(command.c_str());
-    }
-#endif
-
 struct Config
 {
     path sourceDirectory;
@@ -111,11 +97,11 @@ Config readConfig(const string& fileName)
             config.sourceDirectory = sourceDir;
         }
         else if(line.find("initialDirectories=") == 0){
-            string directories = line.substr(string("initialDirectories=").size());
+            string initialDirs = line.substr(string("initialDirectories=").size());
             
-            directories = trim(directories);
+            initialDirs = trim(initialDirs);
 
-            stringstream ss(directories);
+            stringstream ss(initialDirs);
             string path;
             while(getline(ss, path, ',')){
                 path = trim(path);
@@ -187,7 +173,7 @@ void sortAlphabetically(const path& sourceDir)
                 const auto& filePath = entry.path();
                 string name = entry.path().filename().string();
 
-                if(name.empty()|| name[0] == '.'){
+                if(name.empty() || name[0] == '.'){
                     continue;
                 }
 
@@ -210,7 +196,6 @@ void sortAlphabetically(const path& sourceDir)
                                 continue;
                             }
                         }
-
                         moveFile(filePath, alphaFolder);
                     }
                     else{
@@ -302,11 +287,7 @@ void displayCurrentDir(const vector<path>& initialPaths,
 int main()
 {
     //  To draw a straight line for better output handling.
-    int length = 60;
-    string line(length, '-');
-
-    //  To constantly open in a specific window size for better output handling.
-    setConsoleWindowSize(length, 30);
+    string line(60, '-');
 
     const string fileName = "fileSYSman_Config.txt";
 
@@ -345,62 +326,39 @@ int main()
     cout<<line; cout<<endl; 
 
     int choice;
-    do{
-        cout<<"1. Move files to your documents folder\n"
-            <<"2. Sort files in your documents folder\n"
-            <<"   Enter any key to exit.\n\n"
-            <<"Choose action: ";
-        cin>>choice;
+    cout<<"1. Move files to your documents folder\n"
+        <<"2. Sort files in your documents folder\n"
+        <<"   Enter any key to exit.\n\n"
+        <<"Choose action: ";
+    cin>>choice;
 
-        switch(choice){
-            char choice;
-            case 1:
-                cout<<"This action cannot be undone.\n"
-                    <<"Do you want to continue? (y/n): ";
-                cin>>choice;
+    switch(choice){
+        char choice;
+        case 1:
+            moveToSourceDir(config.initialPaths,
+                            config.sourceDirectory,
+                            destinationMap);
+            break;
+        case 2:
+            int sortChoice;
+            do{
+                cout<<"\n1. Sort by extension\n"
+                    <<"2. Sort alphabetiacally\n\n"
+                    <<"Choose action: ";
+                cin>>sortChoice;
+                cin.clear(); fflush(stdin);
+            }while(sortChoice != 1 && sortChoice !=2);
 
-                choice = tolower(choice);
-
-                if(choice == 'n'){
-                    cout<<'\n';
+            switch(sortChoice){
+                case 1: 
+                    sortByExtension(config.sourceDirectory, destinationMap);
                     break;
-                }
-
-                moveToSourceDir(config.initialPaths,
-                                config.sourceDirectory,
-                                destinationMap);
-                break;
-            case 2:
-                int choice2;
-                do{
-                    cout<<"\n1. Sort by extension\n"
-                        <<"2. Sort alphabetiacally\n\n"
-                        <<"Choose action: ";
-                    cin>>choice2;
-                }while(choice2 != 1 && choice2 !=2);
-
-                cout<<"This action cannot be undone.\n"
-                    <<"Do you want to continue? (y/n): ";
-                cin>>choice;
-
-                choice = tolower(choice);
-
-                if(choice == 'n'){
-                    cout<<'\n';
+                case 2:
+                    removeExtensionFolders(config.sourceDirectory, destinationMap);
                     break;
-                }
-
-                switch(choice2){
-                    case 1: 
-                        sortByExtension(config.sourceDirectory, destinationMap);
-                    case 2:
-                        removeExtensionFolders(config.sourceDirectory, destinationMap);
-                }
-                break;
-        }
-        system("pause");
-        cout<<line; cout<<endl; 
-    }while(choice == 1 || choice == 2);
-
+            }
+            break;
+    }
+    system("pause");
     return 0;
 }
