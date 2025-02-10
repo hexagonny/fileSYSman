@@ -1,0 +1,1 @@
+g++ -Iinclude -o build/fileSYSman.exe src/configFunc.cpp src/logMessages.cpp src/main.cpp src/removeFunc.cpp src/sortFunc.cpp
