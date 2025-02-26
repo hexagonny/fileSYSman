@@ -1,19 +1,27 @@
 #include "filesysman.h"
+#include "hutils.h"
+
+#include <iostream>
+#include <fstream>
+
+using std::cout;
+using std::string;
+namespace fs = std::filesystem;
 
 //  This function creates a new configuration file if the user does not have it.
 void createTextConfig(const string &fileName)
 {
-    vector<string> dirLabels = {"prefered documents", "downloads", "desktop"};
-    vector<path> paths(3);
+    std::vector<string> dirLabels = {"prefered documents", "downloads", "desktop"};
+    std::vector<fs::path> paths(3);
 
-    cout<<"If you already have your existing documents folder is decently sorted.\n"
-        <<"I suggest you to create a new secondary documents folder.\n\n";
-    sleep(6000);
+    cout << "If you already have your existing documents folder is decently sorted.\n"
+         << "I suggest you to create a new secondary documents folder.\n\n";
+    hUtils::sleep(6000);
 
     for(size_t i = 0; i < dirLabels.size(); ++i ){
         do{
             cout<<"Enter your "<<dirLabels[i]<<" path: ";
-            cin>>paths[i];
+            std::cin>>paths[i];
 
             if(!exists(paths[i]) || !is_directory(paths[i])){
                 logger.logError("Error: Path does not exists or is not a directory!");
@@ -26,9 +34,9 @@ void createTextConfig(const string &fileName)
     for(const auto &path : paths){
         cout<<'\t'<<path<<'\n';
     }
-    sleep(2000);
+    hUtils::sleep(2000);
     
-    ofstream file(fileName);
+    std::ofstream file(fileName);
 
     if(file.is_open()){
         file<<"sourceDirectory="<<paths[0]<<'\n';
@@ -54,13 +62,13 @@ string trim(const string &str)
 //  This function reads every single string and filters out the unnecessary characters.
 Config readConfig(const string& fileName)
 {
-    ifstream file(fileName); Config config;
+    std::ifstream file(fileName); Config config;
     if(!file.is_open()){
         logger.logError("Error: Failed to open config file: " + fileName);
         return config;
     }
     logger.logSuccess("Successfully opened: " + fileName);
-    sleep(2000);
+    hUtils::sleep(2000);
 
     string line;
     while(getline(file, line)){
@@ -80,7 +88,7 @@ Config readConfig(const string& fileName)
             
             initialDirs = trim(initialDirs);
 
-            stringstream ss(initialDirs);
+            std::stringstream ss(initialDirs);
             string path;
             while(getline(ss, path, ',')){
                 path = trim(path);
@@ -97,9 +105,9 @@ Config readConfig(const string& fileName)
     return config;
 }
 //  This function displays the current destinations for checking and debugging.
-void displayCurrentDir(const vector<path>& initialPaths,
-                       const path& sourceDir,
-                       const unordered_map<string, path>& destMap)
+void displayCurrentDir(const std::vector<fs::path>& initialPaths,
+                       const fs::path& sourceDir,
+                       const std::unordered_map<string, fs::path>& destMap)
 {
     cout<<"Current Configuration:\n\n";
     if(!initialPaths.empty()){

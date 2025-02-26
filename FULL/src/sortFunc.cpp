@@ -1,14 +1,21 @@
 #include "filesysman.h"
+#include "hutils.h"
 
-void moveFile(const path& entry, const path& destination)
+#include <iostream>
+
+using std::cout;
+using std::string;
+namespace fs = std::filesystem;
+
+void moveFile(const fs::path& entry, const fs::path& destination)
 {
-    path destPath = destination / entry.filename();
+    fs::path destPath = destination / entry.filename();
     try{
         rename(entry, destPath);
         logger.logAction("Moved: " + entry.string());
         logger.logMoved("To: " + destPath.string());
     }
-    catch(const filesystem_error &e){
+    catch(const fs::filesystem_error &e){
         logger.logError("Error: Failed to move " + entry.string() + ": "
                         + string(e.what()));
     }
@@ -17,9 +24,9 @@ void moveFile(const path& entry, const path& destination)
   It moves common document files from different directories to the prefered documents folder.
   The algorithm is based on file extentions and multiple directories(eg. downloads folder).
 */
-void moveToSourceDir(const vector<path>& initialPaths,
-                     const path& sourceDir,
-                     const unordered_map<string, path>& destMap)
+void moveToSourceDir(const std::vector<fs::path>& initialPaths,
+                     const fs::path& sourceDir,
+                     const std::unordered_map<string, fs::path>& destMap)
 {
     for (const auto& initialDir : initialPaths){
         if(!exists(initialDir) || !is_directory(initialDir)){
@@ -28,7 +35,7 @@ void moveToSourceDir(const vector<path>& initialPaths,
             continue;
         }
 
-        for(const auto& entry : directory_iterator(initialDir)){
+        for(const auto& entry : fs::directory_iterator(initialDir)){
             if(!entry.is_regular_file()) continue;
 
             const auto& filePath = entry.path();
@@ -45,24 +52,24 @@ void moveToSourceDir(const vector<path>& initialPaths,
   It organizes cluttered documents into their respective folders.
   The algorithm is based on file extentions and their matching folder names.
 */
-void sortByExtension(const path& sourceDir,
-                     const unordered_map<string, path>& destMap)
+void sortByExtension(const fs::path& sourceDir,
+                     const std::unordered_map<string, fs::path>& destMap)
 {
     try{
-        for(const auto& entry : directory_iterator(sourceDir)){
+        for(const auto& entry : fs::directory_iterator(sourceDir)){
             if(!entry.is_regular_file()) continue;
 
             const auto& ext = entry.path().extension().string();
 
             if(destMap.find(ext) != destMap.end()){
-                path destDir = destMap.at(ext);
+                fs::path destDir = destMap.at(ext);
 
                 if(!exists(destDir)){
                     try{
                         create_directory(destDir);
                         logger.logCreated("New folder created: " + destDir.string());
                     }
-                    catch(const filesystem_error &e){
+                    catch(const fs::filesystem_error &e){
                         logger.logError("Error: Failed to create folder: " + string(e.what()));
                         continue;
                     }
@@ -72,14 +79,14 @@ void sortByExtension(const path& sourceDir,
             }
         }
     }
-    catch(const filesystem_error& e){
+    catch(const fs::filesystem_error& e){
         logger.logError("Error: " + string(e.what()));
     }
 }
-void sortAlphabetically(const path& sourceDir)
+void sortAlphabetically(const fs::path& sourceDir)
 {
     try{
-        for(const auto& entry : directory_iterator(sourceDir)){
+        for(const auto& entry : fs::directory_iterator(sourceDir)){
             if(!entry.is_regular_file()) continue;
 
             const auto& filePath = entry.path();
@@ -96,14 +103,14 @@ void sortAlphabetically(const path& sourceDir)
                 char firstChar = toupper(name[0]);
                 if(isalpha(firstChar)){
                     string alphaFolderName(1, firstChar);
-                    path alphaFolder = sourceDir / alphaFolderName;
+                    fs::path alphaFolder = sourceDir / alphaFolderName;
 
                     if(!exists(alphaFolder)){
                         try{
                             create_directory(alphaFolder);
                             logger.logCreated("New folder created: " + alphaFolder.string());
                         }
-                        catch(const filesystem_error &e){
+                        catch(const fs::filesystem_error &e){
                             logger.logError("Error: Failed to create folder: " + string(e.what()));
                             continue;
                         }
@@ -117,7 +124,7 @@ void sortAlphabetically(const path& sourceDir)
             }
         }
     }
-    catch(const filesystem_error& e){
+    catch(const fs::filesystem_error& e){
         logger.logError("Error: " + string(e.what()));
     }  
 }

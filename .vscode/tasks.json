@@ -5,15 +5,10 @@
             "label": "C/C++: g++.exe build active file",
             "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
             "args": [
-                "-fdiagnostics-color=always",
-                "-g",
-                "main.cpp",
-                "configFunc.cpp",
-                "removeFunc.cpp",
-                "sortFunc.cpp",
-                "logMessages.cpp",
-                "-o",
-                "filesysman.exe"
+                "${workspaceFolder}\\FULL\\src\\*.cpp",
+                "${workspaceFolder}\\FULL\\src\\utils\\*.cpp",
+                "-I", "${workspaceFolder}\\FULL\\include",
+                "-o", "${workspaceFolder}\\FULL\\build\\fileSYSman.exe"
             ],
             "options": {
                 "cwd": "${fileDirname}"

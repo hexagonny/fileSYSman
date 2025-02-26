@@ -5,12 +5,10 @@
 #include <filesystem>
 #include <unordered_map>
 
-using namespace std::filesystem;
-
 struct Config
 {
-    path sourceDirectory;
-    std::vector<path> initialPaths;
+    std::filesystem::path sourceDirectory;
+    std::vector<std::filesystem::path> initialPaths;
 };
 
 #endif

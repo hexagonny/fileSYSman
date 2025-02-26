@@ -2,13 +2,12 @@
 #define REMOVEFUNC_H
 
 #include "configStruct.h"
-#include "logMessages.h"
 
-void removeFolder(const path& destination);
+void removeFolder(const std::filesystem::path& destination);
 
-void removeExtensionSorting(const path& sourceDir,
-                            const unordered_map<string, path>& destMap);
+void removeExtensionSorting(const std::filesystem::path& sourceDir,
+                            const std::unordered_map<std::string, std::filesystem::path>& destMap);
 
-void removeAlphabeticalSorting(const path& sourceDir);
+void removeAlphabeticalSorting(const std::filesystem::path& sourceDir);
 
 #endif

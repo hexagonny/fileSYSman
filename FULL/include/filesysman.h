@@ -2,7 +2,6 @@
 #define FILESYSMAN_H
 
 #include "configStruct.h"
-#include "logMessages.h"
 #include "configFunc.h"
 #include "sortFunc.h"
 #include "removeFunc.h"
