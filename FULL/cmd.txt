@@ -1,0 +1,1 @@
+g++ -IFULL/include -o FULL/build/fileSYSman.exe FULL/src/configFunc.cpp FULL/src/logMessages.cpp FULL/src/main.cpp FULL/src/removeFunc.cpp FULL/src/sortFunc.cpp
