@@ -24,13 +24,13 @@ void createTextConfig(const string &fileName)
             std::cin>>paths[i];
 
             if(!exists(paths[i]) || !is_directory(paths[i])){
-                logger.logError("Error: Path does not exists or is not a directory!");
+                hUtils::log.Error("Error: Path does not exists or is not a directory!");
                 paths[i].clear();
             }
         }while(paths[i].empty());
     }
 
-    logger.logSuccess("Directory Accepted:");
+    hUtils::log.Success("Directory Accepted:");
     for(const auto &path : paths){
         cout<<'\t'<<path<<'\n';
     }
@@ -41,10 +41,10 @@ void createTextConfig(const string &fileName)
     if(file.is_open()){
         file<<"sourceDirectory="<<paths[0]<<'\n';
         file<<"initialDirectories="<<paths[1]<<","<<paths[2];
-        logger.logSuccess("File created: " + fileName);
+        hUtils::log.Success("File created: " + fileName);
     }
     else{
-        logger.logError("Error: Failed to create file " + fileName);
+        hUtils::log.Error("Error: Failed to create file " + fileName);
     }
 }
 //  This function removes'\t' in every single line of string.
@@ -64,10 +64,10 @@ Config readConfig(const string& fileName)
 {
     std::ifstream file(fileName); Config config;
     if(!file.is_open()){
-        logger.logError("Error: Failed to open config file: " + fileName);
+        hUtils::log.Error("Error: Failed to open config file: " + fileName);
         return config;
     }
-    logger.logSuccess("Successfully opened: " + fileName);
+    hUtils::log.Success("Successfully opened: " + fileName);
     hUtils::sleep(2000);
 
     string line;
@@ -126,5 +126,5 @@ void displayCurrentDir(const std::vector<fs::path>& initialPaths,
         cout<<'\t'<<destDir.string()<<" -> "
             <<extension<<'\n';
     }
-    cout<<'\n';
+    hUtils::text.toLine();
 }

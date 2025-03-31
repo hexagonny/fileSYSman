@@ -3,13 +3,10 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
-
+#include <limits>
 
 using std::cout;
 using std::string;
-
-#define SCREEN_WIDTH  70
-#define SCREEN_HEIGHT 35
 
 namespace hUtils {
 
@@ -48,10 +45,14 @@ namespace hUtils {
         #endif
     }
 
-    void pause()
+    void pause(bool clearBuffer)
     {
-        cout << "\nPress enter to continue . . .";
-        std::cin.clear(); fflush(stdin); std::cin.ignore();
+        std::cout << "Press Enter to continue. . .";
+        if (clearBuffer) {
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        }
+        std::cin.get();
+        hUtils::text.clearAbove(1);
     }
 
     void sleep(int miliseconds)

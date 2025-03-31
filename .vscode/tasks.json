@@ -3,10 +3,15 @@
         {
             "type": "cppbuild",
             "label": "C/C++: g++.exe build active file",
-            "command": "C:\\msys64\\mingw64\\bin\\g++.exe",
+            "command": "C:\\msys64\\ucrt64\\bin\\g++.exe",
             "args": [
-                "${workspaceFolder}\\FULL\\src\\*.cpp",
-                "${workspaceFolder}\\FULL\\src\\utils\\*.cpp",
+                "${workspaceFolder}\\FULL\\src\\main.cpp",
+                "${workspaceFolder}\\FULL\\src\\configFunc.cpp",
+                "${workspaceFolder}\\FULL\\src\\removeFunc.cpp",
+                "${workspaceFolder}\\FULL\\src\\sortFunc.cpp",
+                "${workspaceFolder}\\FULL\\src\\utils\\hutils_logger.cpp",
+                "${workspaceFolder}\\FULL\\src\\utils\\hutils_system.cpp",
+                "${workspaceFolder}\\FULL\\src\\utils\\hutils_text.cpp",
                 "-I", "${workspaceFolder}\\FULL\\include",
                 "-o", "${workspaceFolder}\\FULL\\build\\fileSYSman.exe"
             ],

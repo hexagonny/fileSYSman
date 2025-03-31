@@ -2,36 +2,35 @@
 #include "hutils.h"
 
 #include <iostream>
-#include <iomanip>
 
 namespace fs = std::filesystem;
 
 int main()
 {
-    hUtils::setConsoleWindowSize(); hUtils::Text::clearAll();
-    hUtils::Text::toLine();
+    hUtils::setConsoleWindowSize(); hUtils::text.clearAll();
+    hUtils::text.toLine();
 
     const std::string fileName = "fileSYSman_Config.txt";
+    bool check = false;
 
     std::cout << "Checking if config file exists...\n\n";
     hUtils::sleep(1000);
     if(!fs::exists(fileName)){
-        logger.logError("Error: Config file does not exist!");
+        hUtils::log.Error("Error: Config file does not exist!");
         hUtils::sleep(1000);
-        hUtils::Text::toLine();
+        hUtils::text.toLine();
         std::cout << "\nYou don't have the config file for fileSYSman!\n"
                   << "Let's quickly configure your settings.\n\n";
         hUtils::pause();
-        hUtils::Text::toLine(); std::cout << '\n';
-        createTextConfig(fileName);
+        hUtils::text.toLine(); std::cout << '\n';
+        createTextConfig(fileName); check = true;
     }
 
     Config config = readConfig(fileName);
     
     if (config.sourceDirectory.empty()){
-        logger.logError("Error: Source directory is missing in the config file.");
-        std::cout << "\n";
-        hUtils::pause();
+        hUtils::log.Error("Error: Source directory is missing in the config file.\n");
+        hUtils::pause(check);
         return 1;
     }
     std::unordered_map<std::string, fs::path> destinationMap = {
@@ -42,13 +41,13 @@ int main()
         {".xlsx", config.sourceDirectory / "XLSX"},
     };
 
-    hUtils::sleep(1000); hUtils::Text::clearAll();
+    hUtils::sleep(1000); hUtils::text.clearAll();
+    hUtils::text.toLine();
     displayCurrentDir(config.initialPaths,
                       config.sourceDirectory,
                       destinationMap);
 
-    hUtils::pause();
-    hUtils::Text::toLine(); std::cout << '\n';
+    hUtils::pause(check);
 
     int choice;
     std::cout << "1. Move files to your documents folder\n"
@@ -58,7 +57,7 @@ int main()
               << std::setw(17) << std::left << "Choose action: ";
     std::cin >> choice;
     std::cin.clear(); fflush(stdin);
-    hUtils::Text::clearLine(17);
+    hUtils::text.clearBelow(15);
 
     switch(choice){
         case 1:
@@ -75,7 +74,7 @@ int main()
                 std::cin >> sortChoice;
                 std::cin.clear(); fflush(stdin);
             }while(sortChoice != 1 && sortChoice != 2);
-            hUtils::Text::toLine(); std::cout <<'\n';
+            hUtils::text.toLine(); std::cout <<'\n';
 
             switch(sortChoice){
                 case 1: 
@@ -94,8 +93,8 @@ int main()
                           << "Choose action: ";
                 std::cin >> removeChoice;
                 std::cin.clear(); fflush(stdin);
-            }while(removeChoice != 1 && removeChoice != 2);
-            hUtils::Text::toLine(); std::cout <<'\n';
+            } while(removeChoice != 1 && removeChoice != 2);
+            hUtils::text.toLine(); std::cout <<'\n';
 
             switch(removeChoice){
                 case 1:
@@ -105,7 +104,7 @@ int main()
             }
             break;
     }
-    logger.displaySummary();
-    hUtils::pause();
+    hUtils::log.Summary();
+    hUtils::pause(true);
     return 0;
 }

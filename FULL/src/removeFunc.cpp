@@ -7,10 +7,10 @@ void removeFolder(const fs::path& destination)
 {
     try{
         remove_all(destination);
-        logger.logRemoved("Successfuly deleted: " + destination.string());
+        hUtils::log.Removed("Successfuly deleted: " + destination.string());
     }
     catch(const fs::filesystem_error &e){
-        logger.logError("Error: Deleting folder: " + std::string(e.what()));
+        hUtils::log.Error("Error: Deleting folder: " + std::string(e.what()));
     }
 }
 void removeExtensionSorting(const fs::path& sourceDir,
@@ -20,7 +20,7 @@ void removeExtensionSorting(const fs::path& sourceDir,
         for(const auto &entry : destMap){
             const fs::path &destDir = entry.second;
             if(!exists(destDir) || !is_directory(destDir)){
-                logger.logWarning("Warning: Directory does not exist or is not a directory: "
+                hUtils::log.Warning("Warning: Directory does not exist or is not a directory: "
                                   + destDir.string());
                 continue;
             }
@@ -34,7 +34,7 @@ void removeExtensionSorting(const fs::path& sourceDir,
         }
     }
     catch(const fs::filesystem_error& e){
-        logger.logError("Error: " + std::string(e.what()));
+        hUtils::log.Error("Error: " + std::string(e.what()));
     }
 }
 void removeAlphabeticalSorting(const fs::path& sourceDir)
@@ -43,7 +43,7 @@ void removeAlphabeticalSorting(const fs::path& sourceDir)
         for(const auto& entry : fs::directory_iterator(sourceDir)){
             const fs::path& destDir = entry.path();
             if(!is_directory(entry)){
-                logger.logWarning("Warning: Directory does not exist or is not a directory: "
+                hUtils::log.Warning("Warning: Directory does not exist or is not a directory: "
                                   + destDir.string());
                 continue;
             }
@@ -60,6 +60,6 @@ void removeAlphabeticalSorting(const fs::path& sourceDir)
         }
     }
     catch(const fs::filesystem_error& e){
-        logger.logError("Error: " + std::string(e.what()));
+        hUtils::log.Error("Error: " + std::string(e.what()));
     }
 }
